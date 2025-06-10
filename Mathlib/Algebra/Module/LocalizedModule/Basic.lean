@@ -159,8 +159,8 @@ but is defeq to it under `with_reducible_and_instances`.
 See https://github.com/leanprover-community/mathlib4/pull/25671 for an approach to generalize this
 but it requires right `R` actions on `R`-algebras.
 -/
-protected def mul {A : Type*} [Semiring A] [Algebra R A] {S : Submonoid R}
-    (m₁ m₂ : LocalizedModule S A) : LocalizedModule S A :=
+instance {A : Type*} [Semiring A] [Algebra R A] {S : Submonoid R} : Mul (LocalizedModule S A) where
+  mul m₁ m₂ :=
   liftOn₂ m₁ m₂ (fun x₁ x₂ => LocalizedModule.mk (x₁.1 * x₂.1) (x₂.2 * x₁.2)) (by
     rintro ⟨a₁, s₁⟩ ⟨a₂, s₂⟩ ⟨b₁, t₁⟩ ⟨b₂, t₂⟩ ⟨u₁, e₁⟩ ⟨u₂, e₂⟩
     simp only [mul_comm s₂ s₁, mul_comm t₂ t₁]
@@ -169,7 +169,16 @@ protected def mul {A : Type*} [Semiring A] [Algebra R A] {S : Submonoid R}
     dsimp [Submonoid.smul_def] at *
     simp only [mul_smul_mul_comm, e₁, e₂])
 
+
+example {A : Type*} [Semiring A] [Algebra R A] {S : Submonoid R} :
+    let foo :=  LocalizedModule.instMul (A := A) (S := S)
+    let bar : Mul (OreLocalization S A) := OreLocalization.instMul
+    bar = foo := by
+  with_reducible_and_instances rfl
+
+
 instance (priority := 900) {A : Type*} [Semiring A] [Algebra R A] {S : Submonoid R} :
+<<<<<<< HEAD
     Monoid (LocalizedModule S A) :=
   fast_instance%
   { __ := inferInstanceAs (One (LocalizedModule S A))
@@ -185,6 +194,21 @@ instance (priority := 900) {A : Type*} [Semiring A] [Algebra R A] {S : Submonoid
       apply mk_eq.mpr _
       use 1
       simp only [one_mul, smul_smul, ← mul_assoc, mul_right_comm] }
+=======
+    Monoid (LocalizedModule S A) where
+  __ := inferInstanceAs (One (LocalizedModule S A))
+  one_mul := by
+    rintro ⟨a, s⟩
+    with_unfolding_all exact mk_eq.mpr ⟨1, by simp only [one_mul, mul_one, one_smul]⟩
+  mul_one := by
+    rintro ⟨a, s⟩
+    with_unfolding_all exact mk_eq.mpr ⟨1, by simp only [mul_one, one_smul, one_mul]⟩
+  mul_assoc := by with_unfolding_all
+    rintro ⟨a₁, s₁⟩ ⟨a₂, s₂⟩ ⟨a₃, s₃⟩
+    apply mk_eq.mpr _
+    use 1
+    simp only [one_mul, smul_smul, ← mul_assoc, mul_right_comm]
+>>>>>>> 9e10d36f6ea (refactor OreSet)
 
 private lemma example_oreLocalizationInstMonoid_eq_localizedModuleInstMonoid :
     OreLocalization.instMonoid = LocalizedModule.instMonoid (A := R) (S := S) := by
