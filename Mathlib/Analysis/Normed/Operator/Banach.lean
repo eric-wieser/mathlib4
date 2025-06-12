@@ -378,9 +378,8 @@ lemma equivRange_symm_apply (hinj : Injective f) (hclo : IsClosed (range f))
   set f' : E →ₛₗ[σ] F := ↑f
   suffices f ((f.equivRange hinj hclo).symm x') = f x from hinj this
   trans f ((f.equivRange hinj hclo).symm.toLinearEquiv x')
-  · rw [ContinuousLinearEquiv.symm_toLinearEquiv]
-    rfl -- is there an API lemma for this already?
-  dsimp only [equivRange_symm_toLinearEquiv]
+  · rfl -- is there an API lemma for this already?
+  simp only [ContinuousLinearEquiv.toLinearEquiv_symm, equivRange_symm_toLinearEquiv]
   change f' ((LinearEquiv.ofInjective f' hinj).symm x') = _
   rw [LinearEquiv.ofInjective_symm_apply (f := f') (h := hinj) x']
 
