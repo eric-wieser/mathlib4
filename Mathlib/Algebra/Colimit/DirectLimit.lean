@@ -94,14 +94,17 @@ variable [∀ i j h, StarHomClass (T h) (G i) (G j)] [∀ i, StarHomClass (H i) 
 instance : Star (DirectLimit G f) where
   star := .map f f (fun _ x ↦ star x) (fun i j h x ↦ map_star (f i j h) x)
 
-lemma star_def (i : ι) (x : G i) :
+lemma star_mk (i : ι) (x : G i) :
     star ⟦⟨i, x⟩⟧ = (⟦⟨i, star x⟩⟧ : DirectLimit G f) := by
   rfl
+
+@[deprecated star_mk (since := "2026-04-28")]
+alias star_def := star_mk
 
 @[simp]
 theorem lift_star (g : ∀ i, H i) (h) (x : DirectLimit G f) :
     DirectLimit.lift f (g ·) h (star x) = star (DirectLimit.lift f (g ·) h x) :=
-  x.induction _ fun i x ↦ by simp_rw [star_def, lift_def, map_star (g i)]
+  x.induction _ fun i x ↦ by simp_rw [star_mk, lift_def, map_star (g i)]
 
 end Star
 
@@ -112,7 +115,7 @@ instance : InvolutiveStar (DirectLimit G f) where
   star_involutive := by
     apply DirectLimit.induction
     intro i x
-    rw [star_def, star_def, star_star]
+    rw [star_mk, star_mk, star_star]
 
 end InvolutiveStar
 
@@ -123,25 +126,29 @@ variable [∀ i j h, MulHomClass (T h) (G i) (G j)] [∀ i, MulHomClass (H i) (G
 @[to_additive] instance : Mul (DirectLimit G f) where
   mul := map₂ f f f (fun _ ↦ (· * ·)) fun _ _ _ ↦ map_mul _
 
-@[to_additive] theorem mul_def (i) (x y : G i) :
+@[to_additive] theorem mk_mul_mk (i) (x y : G i) :
     ⟦⟨i, x⟩⟧ * ⟦⟨i, y⟩⟧ = (⟦⟨i, x * y⟩⟧ : DirectLimit G f) :=
   map₂_def ..
+
+@[to_additive (attr := deprecated mk_add_mk (since := "2026-04-28")),
+  deprecated mk_mul_mk (since := "2026-04-28")]
+alias mul_def := mk_mul_mk
 
 @[to_additive (attr := simp)]
 theorem lift_mul (g : ∀ i, H i) (h) (x y : DirectLimit G f) :
     DirectLimit.lift f (g ·) h (x * y) =
       DirectLimit.lift f (g ·) h x * DirectLimit.lift f (g ·) h y :=
-  DirectLimit.induction₂ _ (fun i x y ↦ by simp_rw [mul_def, lift_def, map_mul (g i)]) x y
+  DirectLimit.induction₂ _ (fun i x y ↦ by simp_rw [mk_mul_mk, lift_def, map_mul (g i)]) x y
 
 end AddMul
 
 @[to_additive] instance [∀ i, CommMagma (G i)] [∀ i j h, MulHomClass (T h) (G i) (G j)] :
     CommMagma (DirectLimit G f) where
-  mul_comm := DirectLimit.induction₂ _ fun i _ _ ↦ by simp_rw [mul_def, mul_comm]
+  mul_comm := DirectLimit.induction₂ _ fun i _ _ ↦ by simp_rw [mk_mul_mk, mul_comm]
 
 @[to_additive] instance [∀ i, Semigroup (G i)] [∀ i j h, MulHomClass (T h) (G i) (G j)] :
     Semigroup (DirectLimit G f) where
-  mul_assoc := DirectLimit.induction₃ _ fun i _ _ _ ↦ by simp_rw [mul_def, mul_assoc]
+  mul_assoc := DirectLimit.induction₃ _ fun i _ _ _ ↦ by simp_rw [mk_mul_mk, mul_assoc]
 
 @[to_additive] instance [∀ i, CommSemigroup (G i)] [∀ i j h, MulHomClass (T h) (G i) (G j)] :
     CommSemigroup (DirectLimit G f) where
@@ -152,7 +159,8 @@ variable [∀ i, Mul (G i)] [∀ i j h, MulHomClass (T h) (G i) (G j)]
 variable [∀ i, StarMul (G i)] [∀ i j h, StarHomClass (T h) (G i) (G j)]
 
 instance : StarMul (DirectLimit G f) where
-  star_mul := DirectLimit.induction₂ _ fun i _ _ ↦ by simp_rw [mul_def, star_def, star_mul, mul_def]
+  star_mul := DirectLimit.induction₂ _ fun i _ _ ↦ by
+    simp_rw [mk_mul_mk, star_mk, star_mul, mk_mul_mk]
 
 end StarMul
 
@@ -163,13 +171,17 @@ variable [∀ i j h, MulActionHomClass (T h) R (G i) (G j)] [∀ i, MulActionHom
 @[to_additive] instance : SMul R (DirectLimit G f) where
   smul r := map _ _ (fun _ ↦ (r • ·)) fun _ _ _ ↦ map_smul _ r
 
-@[to_additive] theorem smul_def (i x) (r : R) : r • ⟦⟨i, x⟩⟧ = (⟦⟨i, r • x⟩⟧ : DirectLimit G f) :=
+@[to_additive] theorem smul_mk (i x) (r : R) : r • ⟦⟨i, x⟩⟧ = (⟦⟨i, r • x⟩⟧ : DirectLimit G f) :=
   rfl
+
+@[to_additive (attr := deprecated vadd_mk (since := "2026-04-28")),
+  deprecated smul_mk (since := "2026-04-28")]
+alias smul_def := smul_mk
 
 @[to_additive (attr := simp)]
 theorem lift_smul (g : ∀ i, H i) (h) (r : R) (x : DirectLimit G f) :
     DirectLimit.lift f (g ·) h (r • x) = r • DirectLimit.lift f (g ·) h x :=
-  x.induction _ fun i x ↦ by simp_rw [smul_def, lift_def, map_smul (g i)]
+  x.induction _ fun i x ↦ by simp_rw [smul_mk, lift_def, map_smul (g i)]
 
 end SMul
 
@@ -178,20 +190,20 @@ instance [Star R] [∀ i, Star (G i)] [∀ i j h, StarHomClass (T h) (G i) (G j)
     [∀ i, StarModule R (G i)] :
     StarModule R (DirectLimit G f) where
   star_smul r := DirectLimit.induction _ fun i x ↦ by
-    simp_rw [star_def, smul_def, ← star_smul, star_def]
+    simp_rw [star_mk, smul_mk, ← star_smul, star_mk]
 
 @[to_additive] instance [Monoid R] [∀ i, MulAction R (G i)]
     [∀ i j h, MulActionHomClass (T h) R (G i) (G j)] :
     MulAction R (DirectLimit G f) where
-  one_smul := DirectLimit.induction _ fun i _ ↦ by rw [smul_def, one_smul]
-  mul_smul _ _ := DirectLimit.induction _ fun i _ ↦ by simp_rw [smul_def, mul_smul]
+  one_smul := DirectLimit.induction _ fun i _ ↦ by rw [smul_mk, one_smul]
+  mul_smul _ _ := DirectLimit.induction _ fun i _ ↦ by simp_rw [smul_mk, mul_smul]
 
 variable [Nonempty ι]
 
 @[to_additive] instance [∀ i, MulOneClass (G i)] [∀ i j h, MonoidHomClass (T h) (G i) (G j)] :
     MulOneClass (DirectLimit G f) where
-  one_mul := DirectLimit.induction _ fun i _ ↦ by simp_rw [one_def i, mul_def, one_mul]
-  mul_one := DirectLimit.induction _ fun i _ ↦ by simp_rw [one_def i, mul_def, mul_one]
+  one_mul := DirectLimit.induction _ fun i _ ↦ by simp_rw [one_def i, mk_mul_mk, one_mul]
+  mul_one := DirectLimit.induction _ fun i _ ↦ by simp_rw [one_def i, mk_mul_mk, mul_one]
 
 section Monoid
 variable [∀ i, Monoid (G i)] [Monoid C]
@@ -202,15 +214,19 @@ variable [∀ i j h, MonoidHomClass (T h) (G i) (G j)] [∀ i, MonoidHomClass (H
   mul_one := mul_one
   npow n := map _ _ (fun _ ↦ (· ^ n)) fun _ _ _ x ↦ map_pow _ x n
   npow_zero := DirectLimit.induction _ fun i _ ↦ by simp_rw [map_def, pow_zero, one_def i]
-  npow_succ n := DirectLimit.induction _ fun i _ ↦ by simp_rw [map_def, pow_succ, mul_def]
+  npow_succ n := DirectLimit.induction _ fun i _ ↦ by simp_rw [map_def, pow_succ, mk_mul_mk]
 
-@[to_additive] theorem npow_def (i x) (n : ℕ) : ⟦⟨i, x⟩⟧ ^ n = (⟦⟨i, x ^ n⟩⟧ : DirectLimit G f) :=
+@[to_additive] theorem npow_mk (i x) (n : ℕ) : ⟦⟨i, x⟩⟧ ^ n = (⟦⟨i, x ^ n⟩⟧ : DirectLimit G f) :=
   rfl
+
+@[to_additive (attr := deprecated nsmul_mk (since := "2026-04-28")),
+  deprecated npow_mk (since := "2026-04-28")]
+alias npow_def := npow_mk
 
 @[to_additive (attr := simp)]
 theorem lift_npow (g : ∀ i, H i) (h) (x : DirectLimit G f) (n : ℕ) :
     DirectLimit.lift f (g ·) h (x ^ n) = DirectLimit.lift f (g ·) h x ^ n :=
-  x.induction _ fun i x ↦ by simp_rw [npow_def, lift_def, map_pow (g i)]
+  x.induction _ fun i x ↦ by simp_rw [npow_mk, lift_def, map_pow (g i)]
 
 end Monoid
 
@@ -223,7 +239,8 @@ variable [∀ i, AddMonoid (G i)] [∀ i j h, AddMonoidHomClass (T h) (G i) (G j
 variable [∀ i, StarAddMonoid (G i)] [∀ i j h, StarHomClass (T h) (G i) (G j)]
 
 instance : StarAddMonoid (DirectLimit G f) where
-  star_add := DirectLimit.induction₂ _ fun i _ _ ↦ by simp_rw [add_def, star_def, star_add, add_def]
+  star_add := DirectLimit.induction₂ _ fun i _ _ ↦ by
+    simp_rw [mk_add_mk, star_mk, star_add, mk_add_mk]
 
 end StarAddMonoid
 
@@ -236,38 +253,50 @@ variable [∀ i j h, MonoidHomClass (T h) (G i) (G j)] [∀ i, MonoidHomClass (H
   div := map₂ _ _ _ (fun _ ↦ (· / ·)) fun _ _ _ ↦ map_div _
   zpow n := map _ _ (fun _ ↦ (· ^ n)) fun _ _ _ x ↦ map_zpow _ x n
   div_eq_mul_inv := DirectLimit.induction₂ _ fun i _ _ ↦ show map₂ .. = _ * map .. by
-    simp_rw [map₂_def, map_def, div_eq_mul_inv, mul_def]
+    simp_rw [map₂_def, map_def, div_eq_mul_inv, mk_mul_mk]
   zpow_zero' := DirectLimit.induction _ fun i _ ↦ by simp_rw [map_def, zpow_zero, one_def i]
   zpow_succ' n := DirectLimit.induction _ fun i x ↦ by
-    simp_rw [map_def, mul_def]; congr; apply DivInvMonoid.zpow_succ'
+    simp_rw [map_def, mk_mul_mk]; congr; apply DivInvMonoid.zpow_succ'
   zpow_neg' n := DirectLimit.induction _ fun i x ↦ by
     simp_rw +instances [map_def]; congr; apply DivInvMonoid.zpow_neg'
   inv_mul_cancel := DirectLimit.induction _ fun i _ ↦ by
-    simp_rw [map_def, mul_def, inv_mul_cancel, one_def i]
+    simp_rw [map_def, mk_mul_mk, inv_mul_cancel, one_def i]
 
-@[to_additive] theorem inv_def (i x) : (⟦⟨i, x⟩⟧)⁻¹ = (⟦⟨i, x⁻¹⟩⟧ : DirectLimit G f) := rfl
+@[to_additive] theorem inv_mk (i x) : (⟦⟨i, x⟩⟧)⁻¹ = (⟦⟨i, x⁻¹⟩⟧ : DirectLimit G f) := rfl
 
-@[to_additive] theorem div_def (i x y) : ⟦⟨i, x⟩⟧ / ⟦⟨i, y⟩⟧ = (⟦⟨i, x / y⟩⟧ : DirectLimit G f) :=
+@[to_additive (attr := deprecated neg_mk (since := "2026-04-28")),
+  deprecated inv_mk (since := "2026-04-28")]
+alias inv_def := inv_mk
+
+@[to_additive] theorem mk_div_mk (i x y) : ⟦⟨i, x⟩⟧ / ⟦⟨i, y⟩⟧ = (⟦⟨i, x / y⟩⟧ : DirectLimit G f) :=
   map₂_def ..
 
-@[to_additive] theorem zpow_def (i x) (n : ℤ) : ⟦⟨i, x⟩⟧ ^ n = (⟦⟨i, x ^ n⟩⟧ : DirectLimit G f) :=
+@[to_additive (attr := deprecated mk_sub_mk (since := "2026-04-28")),
+  deprecated mk_div_mk (since := "2026-04-28")]
+alias div_def := mk_div_mk
+
+@[to_additive] theorem zpow_mk (i x) (n : ℤ) : ⟦⟨i, x⟩⟧ ^ n = (⟦⟨i, x ^ n⟩⟧ : DirectLimit G f) :=
   rfl
+
+@[to_additive (attr := deprecated zsmul_mk (since := "2026-04-28")),
+  deprecated zpow_mk (since := "2026-04-28")]
+alias zpow_def := zpow_mk
 
 @[to_additive (attr := simp)]
 theorem lift_inv (g : ∀ i, H i) (h) (x : DirectLimit G f) :
     DirectLimit.lift f (g ·) h (x⁻¹) = (DirectLimit.lift f (g ·) h x)⁻¹ :=
-  x.induction _ fun i x ↦ by simp_rw [inv_def, lift_def, map_inv (g i)]
+  x.induction _ fun i x ↦ by simp_rw [inv_mk, lift_def, map_inv (g i)]
 
 @[to_additive (attr := simp)]
 theorem lift_div (g : ∀ i, H i) (h) (x y : DirectLimit G f) :
     DirectLimit.lift f (g ·) h (x / y) =
       (DirectLimit.lift f (g ·) h x) / (DirectLimit.lift f (g ·) h y) :=
-  DirectLimit.induction₂ _ (fun i x y ↦ by simp_rw [div_def, lift_def, map_div (g i)]) x y
+  DirectLimit.induction₂ _ (fun i x y ↦ by simp_rw [mk_div_mk, lift_def, map_div (g i)]) x y
 
 @[to_additive (attr := simp)]
 theorem lift_zpow (g : ∀ i, H i) (h) (x : DirectLimit G f) (z : ℤ) :
     DirectLimit.lift f (g ·) h (x ^ z) = DirectLimit.lift f (g ·) h x ^ z :=
-  x.induction _ fun i x ↦ by simp_rw [zpow_def, lift_def, map_zpow (g i)]
+  x.induction _ fun i x ↦ by simp_rw [zpow_mk, lift_def, map_zpow (g i)]
 
 end Group
 
@@ -278,8 +307,8 @@ end Group
 instance [∀ i, MulZeroClass (G i)] [∀ i j h, MulHomClass (T h) (G i) (G j)]
     [∀ i j h, ZeroHomClass (T h) (G i) (G j)] :
     MulZeroClass (DirectLimit G f) where
-  zero_mul := DirectLimit.induction _ fun i _ ↦ by simp_rw [zero_def i, mul_def, zero_mul]
-  mul_zero := DirectLimit.induction _ fun i _ ↦ by simp_rw [zero_def i, mul_def, mul_zero]
+  zero_mul := DirectLimit.induction _ fun i _ ↦ by simp_rw [zero_def i, mk_mul_mk, zero_mul]
+  mul_zero := DirectLimit.induction _ fun i _ ↦ by simp_rw [zero_def i, mk_mul_mk, mul_zero]
 
 section MulZeroOneClass
 
@@ -321,39 +350,48 @@ instance : GroupWithZero (DirectLimit G f) where
   div := map₂ _ _ _ (fun _ ↦ (· / ·)) fun _ _ _ ↦ map_div₀ _
   zpow n := map _ _ (fun _ ↦ (· ^ n)) fun _ _ _ x ↦ map_zpow₀ _ x n
   div_eq_mul_inv := DirectLimit.induction₂ _ fun i _ _ ↦ show map₂ .. = _ * map .. by
-    simp_rw [map₂_def, map_def, div_eq_mul_inv, mul_def]
+    simp_rw [map₂_def, map_def, div_eq_mul_inv, mk_mul_mk]
   zpow_zero' := DirectLimit.induction _ fun i _ ↦ by simp_rw [map_def, zpow_zero, one_def i]
   zpow_succ' n := DirectLimit.induction _ fun i x ↦ by
-    simp_rw [map_def, mul_def]; congr; apply DivInvMonoid.zpow_succ'
+    simp_rw [map_def, mk_mul_mk]; congr; apply DivInvMonoid.zpow_succ'
   zpow_neg' n := DirectLimit.induction _ fun i x ↦ by
     simp_rw [map_def]; congr; apply DivInvMonoid.zpow_neg'
   inv_zero := show ⟦_⟧ = ⟦_⟧ by simp_rw [inv_zero]
   mul_inv_cancel := DirectLimit.induction _ fun i x ne ↦ by
     have : x ≠ 0 := by rintro rfl; exact ne (zero_def i).symm
-    simp_rw [map_def, mul_def, mul_inv_cancel₀ this, one_def i]
+    simp_rw [map_def, mk_mul_mk, mul_inv_cancel₀ this, one_def i]
 
-theorem inv₀_def (i x) : (⟦⟨i, x⟩⟧)⁻¹ = (⟦⟨i, x⁻¹⟩⟧ : DirectLimit G f) := rfl
+theorem inv₀_mk (i x) : (⟦⟨i, x⟩⟧)⁻¹ = (⟦⟨i, x⁻¹⟩⟧ : DirectLimit G f) := rfl
 
-theorem div₀_def (i x y) : ⟦⟨i, x⟩⟧ / ⟦⟨i, y⟩⟧ = (⟦⟨i, x / y⟩⟧ : DirectLimit G f) :=
+@[deprecated inv₀_mk (since := "2026-04-28")]
+alias inv₀_def := inv₀_mk
+
+theorem mk_div₀_mk (i x y) : ⟦⟨i, x⟩⟧ / ⟦⟨i, y⟩⟧ = (⟦⟨i, x / y⟩⟧ : DirectLimit G f) :=
   map₂_def ..
 
-theorem zpow₀_def (i x) (n : ℤ) : ⟦⟨i, x⟩⟧ ^ n = (⟦⟨i, x ^ n⟩⟧ : DirectLimit G f) := rfl
+@[deprecated mk_div₀_mk (since := "2026-04-28")]
+alias div₀_def := mk_div₀_mk
+
+theorem zpow₀_mk (i x) (n : ℤ) : ⟦⟨i, x⟩⟧ ^ n = (⟦⟨i, x ^ n⟩⟧ : DirectLimit G f) := rfl
+
+@[deprecated zpow₀_mk (since := "2026-04-28")]
+alias zpow₀_def := zpow₀_mk
 
 @[simp]
 theorem lift_inv₀ (g : ∀ i, H i) (h) (x : DirectLimit G f) :
     DirectLimit.lift f (g ·) h (x⁻¹) = (DirectLimit.lift f (g ·) h x)⁻¹ :=
-  x.induction _ fun i x ↦ by simp_rw [inv₀_def, lift_def, map_inv₀ (g i)]
+  x.induction _ fun i x ↦ by simp_rw [inv₀_mk, lift_def, map_inv₀ (g i)]
 
 @[simp]
 theorem lift_div₀ (g : ∀ i, H i) (h) (x y : DirectLimit G f) :
     DirectLimit.lift f (g ·) h (x / y) =
       (DirectLimit.lift f (g ·) h x) / (DirectLimit.lift f (g ·) h y) :=
-  DirectLimit.induction₂ _ (fun i x y ↦ by simp_rw [div₀_def, lift_def, map_div₀ (g i)]) x y
+  DirectLimit.induction₂ _ (fun i x y ↦ by simp_rw [mk_div₀_mk, lift_def, map_div₀ (g i)]) x y
 
 @[simp]
 theorem lift_zpow₀ (g : ∀ i, H i) (h) (x : DirectLimit G f) (z : ℤ) :
     DirectLimit.lift f (g ·) h (x ^ z) = DirectLimit.lift f (g ·) h x ^ z :=
-  x.induction _ fun i x ↦ by simp_rw [zpow₀_def, lift_def, map_zpow₀ (g i)]
+  x.induction _ fun i x ↦ by simp_rw [zpow₀_mk, lift_def, map_zpow₀ (g i)]
 
 end GroupWithZero
 
@@ -369,7 +407,7 @@ variable [∀ i, AddMonoidWithOne (G i)] [∀ i j h, AddMonoidHomClass (T h) (G 
 instance : AddMonoidWithOne (DirectLimit G f) where
   natCast n := map₀ _ fun _ ↦ n
   natCast_zero := show ⟦_⟧ = ⟦_⟧ by simp_rw [Nat.cast_zero]
-  natCast_succ n := show ⟦_⟧ = ⟦_⟧ + ⟦_⟧ by simp_rw [Nat.cast_succ, add_def]
+  natCast_succ n := show ⟦_⟧ = ⟦_⟧ + ⟦_⟧ by simp_rw [Nat.cast_succ, mk_add_mk]
 
 theorem natCast_def [∀ i j h, OneHomClass (T h) (G i) (G j)] (n : ℕ) (i) :
     (n : DirectLimit G f) = ⟦⟨i, n⟩⟧ :=
@@ -407,9 +445,9 @@ instance [∀ i, AddCommGroupWithOne (G i)] [∀ i j h, AddMonoidHomClass (T h) 
 instance [∀ i, NonUnitalNonAssocSemiring (G i)] [∀ i j h, NonUnitalRingHomClass (T h) (G i) (G j)] :
     NonUnitalNonAssocSemiring (DirectLimit G f) where
   left_distrib := DirectLimit.induction₃ _ fun i _ _ _ ↦ by
-    simp_rw [add_def, mul_def, left_distrib, add_def]
+    simp_rw [mk_add_mk, mk_mul_mk, left_distrib, mk_add_mk]
   right_distrib := DirectLimit.induction₃ _ fun i _ _ _ ↦ by
-    simp_rw [add_def, mul_def, right_distrib, add_def]
+    simp_rw [mk_add_mk, mk_mul_mk, right_distrib, mk_add_mk]
   zero_mul := zero_mul
   mul_zero := mul_zero
 
@@ -474,20 +512,20 @@ section Action
 instance [∀ i, Zero (G i)] [∀ i, SMulZeroClass R (G i)]
     [∀ i j h, MulActionHomClass (T h) R (G i) (G j)] :
     SMulZeroClass R (DirectLimit G f) where
-  smul_zero r := (smul_def _ _ _).trans <| by rw [smul_zero]; rfl
+  smul_zero r := (smul_mk _ _ _).trans <| by rw [smul_zero]; rfl
 
 instance [Zero R] [∀ i, Zero (G i)] [∀ i, SMulWithZero R (G i)]
     [∀ i j h, MulActionHomClass (T h) R (G i) (G j)]
     [∀ i j h, ZeroHomClass (T h) (G i) (G j)] :
     SMulWithZero R (DirectLimit G f) where
-  zero_smul := DirectLimit.induction _ fun i _ ↦ by simp_rw [smul_def, zero_smul, zero_def i]
+  zero_smul := DirectLimit.induction _ fun i _ ↦ by simp_rw [smul_mk, zero_smul, zero_def i]
 
 instance [∀ i, AddZeroClass (G i)] [∀ i, DistribSMul R (G i)]
     [∀ i j h, AddMonoidHomClass (T h) (G i) (G j)]
     [∀ i j h, MulActionHomClass (T h) R (G i) (G j)] :
     DistribSMul R (DirectLimit G f) where
   smul_add r := DirectLimit.induction₂ _ fun i _ _ ↦ by
-    simp_rw [add_def, smul_def, smul_add, add_def]
+    simp_rw [mk_add_mk, smul_mk, smul_add, mk_add_mk]
 
 instance [Monoid R] [∀ i, AddMonoid (G i)] [∀ i, DistribMulAction R (G i)]
     [∀ i j h, DistribMulActionHomClass (T h) R (G i) (G j)] :
@@ -500,15 +538,15 @@ instance [Monoid R] [∀ i, Monoid (G i)] [∀ i, MulDistribMulAction R (G i)]
     [∀ i j h, MulActionHomClass (T h) R (G i) (G j)] :
     MulDistribMulAction R (DirectLimit G f) where
   smul_mul r := DirectLimit.induction₂ _ fun i _ _ ↦ by
-    simp_rw [mul_def, smul_def, MulDistribMulAction.smul_mul, mul_def]
-  smul_one r := (smul_def _ _ _).trans <| by rw [smul_one]; rfl
+    simp_rw [mk_mul_mk, smul_mk, MulDistribMulAction.smul_mul, mk_mul_mk]
+  smul_one r := (smul_mk _ _ _).trans <| by rw [smul_one]; rfl
 
 instance [Semiring R] [∀ i, AddCommMonoid (G i)] [∀ i, Module R (G i)]
     [∀ i j h, LinearMapClass (T h) R (G i) (G j)] :
     Module R (DirectLimit G f) :=
   have _ i j h : DistribMulActionHomClass (T h) R (G i) (G j) := inferInstance
-  { add_smul _ _ := DirectLimit.induction _ fun i _ ↦ by simp_rw [smul_def, add_smul, add_def],
-    zero_smul := DirectLimit.induction _ fun i _ ↦ by simp_rw [smul_def, zero_smul, zero_def i] }
+  { add_smul _ _ := DirectLimit.induction _ fun i _ ↦ by simp_rw [smul_mk, add_smul, mk_add_mk],
+    zero_smul := DirectLimit.induction _ fun i _ ↦ by simp_rw [smul_mk, zero_smul, zero_def i] }
 
 end Action
 
@@ -520,11 +558,11 @@ instance : DivisionSemiring (DirectLimit G f) where
   __ : GroupWithZero _ := inferInstance
   __ : Semiring _ := inferInstance
   nnratCast q := map₀ _ fun _ ↦ q
-  nnratCast_def q := show ⟦_⟧ = ⟦_⟧ / ⟦_⟧ by simp_rw [div₀_def]; rw [NNRat.cast_def]
+  nnratCast_def q := show ⟦_⟧ = ⟦_⟧ / ⟦_⟧ by simp_rw [mk_div₀_mk]; rw [NNRat.cast_def]
   nnqsmul q := map _ _ (fun _ ↦ (q • ·)) fun _ _ _ x ↦ by
     simp_rw [NNRat.smul_def, map_mul, map_nnratCast]
   nnqsmul_def _ := DirectLimit.induction _ fun i x ↦ show ⟦_⟧ = map₀ .. * _ by
-    simp_rw [map₀_def _ _ (fun _ _ _ ↦ map_nnratCast _ _) i, mul_def, NNRat.smul_def]
+    simp_rw [map₀_def _ _ (fun _ _ _ ↦ map_nnratCast _ _) i, mk_mul_mk, NNRat.smul_def]
 
 theorem nnratCast_def (q : ℚ≥0) (i) : (q : DirectLimit G f) = ⟦⟨i, q⟩⟧ :=
   map₀_def _ _ (fun _ _ _ ↦ map_nnratCast _ _) _
@@ -550,11 +588,11 @@ instance : DivisionRing (DirectLimit G f) where
   __ : DivisionSemiring _ := inferInstance
   __ : Ring _ := inferInstance
   ratCast q := map₀ _ fun _ ↦ q
-  ratCast_def q := show ⟦_⟧ = ⟦_⟧ / ⟦_⟧ by simp_rw [div₀_def]; rw [Rat.cast_def]
+  ratCast_def q := show ⟦_⟧ = ⟦_⟧ / ⟦_⟧ by simp_rw [mk_div₀_mk]; rw [Rat.cast_def]
   qsmul q := map _ _ (fun _ ↦ (q • ·)) fun _ _ _ x ↦ by
     simp_rw [Rat.smul_def, map_mul, map_ratCast]
   qsmul_def _ := DirectLimit.induction _ fun i x ↦ show ⟦_⟧ = map₀ .. * _ by
-    simp_rw [map₀_def _ _ (fun _ _ _ ↦ map_ratCast _ _) i, mul_def, Rat.smul_def]
+    simp_rw [map₀_def _ _ (fun _ _ _ ↦ map_ratCast _ _) i, mk_mul_mk, Rat.smul_def]
 
 theorem ratCast_def (q : ℚ) (i) : (q : DirectLimit G f) = ⟦⟨i, q⟩⟧ :=
   map₀_def _ _ (fun _ _ _ ↦ map_ratCast _ _) _
@@ -585,8 +623,8 @@ variable (R ι G f) [Nonempty ι]
 /-- The canonical map from a component to the direct limit. -/
 def of (i) : G i →ₗ[R] DirectLimit G f where
   toFun x := ⟦⟨i, x⟩⟧
-  map_add' _ _ := (add_def ..).symm
-  map_smul' _ _ := (smul_def ..).symm
+  map_add' _ _ := (mk_add_mk ..).symm
+  map_smul' _ _ := (smul_mk ..).symm
 
 variable {R ι G f}
 
@@ -628,9 +666,9 @@ variable (G f) in
 /-- The canonical map from a component to the direct limit. -/
 nonrec def of (i) : G i →ₙ+* DirectLimit G f where
   toFun x := ⟦⟨i, x⟩⟧
-  map_mul' _ _ := (mul_def ..).symm
+  map_mul' _ _ := (mk_mul_mk ..).symm
   map_zero' := (zero_def i).symm
-  map_add' _ _ := (add_def ..).symm
+  map_add' _ _ := (mk_add_mk ..).symm
 
 @[simp] theorem of_f {i j} (hij) (x) : of G f j (f i j hij x) = of G f i x := .symm <| eq_of_le ..
 
@@ -711,7 +749,7 @@ variable (G f) in
 noncomputable def of (i) : G i →⋆ₙ+* DirectLimit G f where
   __ := NonUnitalRing.of G f i
   toFun x := ⟦⟨i, x⟩⟧
-  map_star' _ := (star_def ..).symm
+  map_star' _ := (star_mk ..).symm
 
 @[simp] lemma of_f {i j} (hij) (x) : of G f j (f i j hij x) = of G f i x := .symm <| eq_of_le ..
 
