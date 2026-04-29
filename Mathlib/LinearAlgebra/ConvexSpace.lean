@@ -4,7 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Kim Morrison
 -/
 module
-public import Mathlib.Algebra.BigOperators.Finsupp.Basic
+public import Mathlib.LinearAlgebra.DFinsupp
+public import Mathlib.Data.DFinsupp.Order
 public import Mathlib.Algebra.Module.Defs
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Ring.Defs
@@ -45,18 +46,20 @@ universe issues with indexed families.
 
 universe u v w
 
-noncomputable section
+section
 
 /--
 A finitely supported probability distribution over elements of `M` with coefficients in `R`.
 The weights are non-negative and sum to 1.
 -/
 structure StdSimplex (R : Type u) [LE R] [AddCommMonoid R] [One R] (M : Type v)
-    extends weights : M →₀ R where
+
+    extends weights : Π₀ _ : M, R where
   /-- All weights are non-negative. -/
   nonneg : 0 ≤ weights
   /-- The weights sum to 1. -/
-  total : weights.sum (fun _ r => r) = 1
+  total [DecidableEq M] : weights.sumAddHom (fun _ => .id _) = 1
+
 
 attribute [simp] StdSimplex.total
 grind_pattern StdSimplex.nonneg => self.weights
@@ -65,6 +68,7 @@ grind_pattern StdSimplex.total => self.weights
 namespace StdSimplex
 
 variable {R : Type u} [PartialOrder R] [Semiring R] {M N P : Type*}
+-- variable [DecidableEq M] [DecidableEq N] [DecidableEq P]
 
 lemma nonempty [Nontrivial R] (f : StdSimplex R M) : Nonempty M := by
   by_contra!
@@ -76,40 +80,52 @@ theorem ext {f g : StdSimplex R M} (h : f.weights = g.weights) : f = g := by
 
 variable [IsStrictOrderedRing R]
 
+
+example : 0 ≤ Finsupp.single 0 (1 : R) := by
+  simp only [Finsupp.single_nonneg, zero_le_one]
+
 /-- The point mass distribution concentrated at `x`. -/
 @[simps weights]
-def single (x : M) : StdSimplex R M where
-  weights := Finsupp.single x 1
+def single [DecidableEq M] (x : M) : StdSimplex R M where
+  weights := DFinsupp.single x 1
   nonneg := by simp
-  total := by simp
+  total {inst} := by
+    rename_i inst2
+    cases Subsingleton.elim inst inst2
+    simp
 
-theorem mk_single (x : M) {nonneg total} :
-    (StdSimplex.mk (Finsupp.single x (1 : R)) nonneg total) = single x := rfl
+theorem mk_single [DecidableEq M] (x : M) {nonneg total} :
+    (StdSimplex.mk (DFinsupp.single x (1 : R)) nonneg total) = single x := rfl
 
 /-- A probability distribution with weight `s` on `x` and weight `t` on `y`. -/
-def duple (x y : M) {s t : R} (hs : 0 ≤ s) (ht : 0 ≤ t) (h : s + t = 1) : StdSimplex R M where
-  weights := Finsupp.single x s + Finsupp.single y t
+def duple [DecidableEq M] (x y : M) {s t : R} (hs : 0 ≤ s) (ht : 0 ≤ t) (h : s + t = 1) : StdSimplex R M where
+  weights := DFinsupp.single x s + DFinsupp.single y t
   nonneg := add_nonneg (by simpa) (by simpa)
-  total := by
-    classical
-    rw [Finsupp.sum_add_index] <;> simp [h]
+  total {inst} := by
+    rename_i inst2
+    cases Subsingleton.elim inst inst2
+    simpa
 
 /--
 Map a function over the support of a standard simplex.
 For each n : N, the weight is the sum of weights of all m : M with g m = n.
 -/
-def map {M : Type v} {N : Type w} (g : M → N) (f : StdSimplex R M) : StdSimplex R N where
-  weights := f.weights.mapDomain g
-  nonneg := f.mapDomain_nonneg f.nonneg
-  total := by simp [Finsupp.sum_mapDomain_index]
+def map [DecidableEq M] (g : M → N) (f : StdSimplex R M) : StdSimplex R N where
+  weights := f.sumAddHom fun i => DFinsupp.singleAddHom (fun _ => R) (g i)
+  nonneg := by
+    sorry
+  total := by
+    sorry
 
 @[simp]
 lemma map_const (f : StdSimplex R M) (x : N) : f.map (fun _ ↦ x) = .single x := by
   classical
   ext a
-  suffices f.sum (fun a₁ b ↦ if x = a then b else 0) = if x = a then 1 else 0 by
-    simpa [map, Finsupp.mapDomain, ← mk_single, Finsupp.single_apply]
-  split_ifs <;> simp
+  simp [map]
+  sorry
+  -- suffices f.sum (fun a₁ b ↦ if x = a then b else 0) = if x = a then 1 else 0 by
+  --   simpa [map, Finsupp.mapDomain, ← mk_single, Finsupp.single_apply]
+  -- split_ifs <;> simp
 
 @[simp]
 lemma map_single (x : M) (f : M → N) : (single (R := R) x).map f = .single (f x) := by
@@ -120,7 +136,7 @@ lemma map_single (x : M) (f : M → N) : (single (R := R) x).map f = .single (f 
 lemma map_duple {s t : R} (hs : 0 ≤ s) (ht : 0 ≤ t) (h : s + t = 1) (x y : M) (f : M → N) :
     (duple x y hs ht h).map f = duple (f x) (f y) hs ht h := by
   ext a
-  simp [map, duple, Finsupp.mapDomain_add]
+  simp [map, duple, DFinsupp.mapDomain_add]
 
 @[simp]
 lemma map_id (f : StdSimplex R M) : f.map id = f := by
@@ -139,7 +155,7 @@ Join operation for standard simplices (monadic join).
 Given a distribution over distributions, flattens it to a single distribution.
 -/
 def join (f : StdSimplex R (StdSimplex R M)) : StdSimplex R M where
-  weights := f.weights.sum (fun d r => r • d.weights)
+  weights := f.weights.sumAddHom (fun d r => r • d.weights)
   nonneg := f.sum_nonneg fun d _ ↦ smul_nonneg (f.nonneg d) d.nonneg
   total := by
     rw [Finsupp.sum_sum_index (fun _ ↦ rfl) (fun _ _ _ ↦ rfl)]
