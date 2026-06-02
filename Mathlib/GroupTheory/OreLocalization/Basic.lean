@@ -72,8 +72,9 @@ def oreEqv : Setoid (X × S) where
         -- Porting note: the proof used `assoc_rw`
         rw [mul_assoc _ (s₂ : R), h₁, ← mul_assoc, h₂, mul_assoc, ← hsu, ← mul_assoc]
       rcases ore_right_cancel (r₃ * v) (s₃ * s₂) s this with ⟨w, hw⟩
+      simp_rw [smul_eq_mul] at hw
       refine ⟨w * (s₃ * s₂), w * (r₃ * u), ?_, ?_⟩ <;>
-        simp only [Submonoid.coe_mul, Submonoid.smul_def, ← hw]
+        simp only [Submonoid.coe_mul, Submonoid.smul_def]
       · simp only [mul_smul, hru, ← Submonoid.smul_def]
         sorry
       · simp only [mul_assoc, hsu]
@@ -87,15 +88,9 @@ def oreEqv : Setoid (X × S) where
 end OreLocalization
 
 /-- The Ore localization of a monoid and a submonoid fulfilling the Ore condition. -/
-<<<<<<< HEAD
 @[to_additive AddOreLocalization /-- The Ore localization of an additive monoid and a submonoid
 fulfilling the Ore condition. -/]
-def OreLocalization {R : Type*} [Monoid R] (S : Submonoid R) [OreSet S]
-=======
-@[to_additive AddOreLocalization "The Ore localization of an additive monoid and a submonoid
-fulfilling the Ore condition."]
 def OreLocalization {R : Type*} [Monoid R] (S : Submonoid R) [OreSet S R]
->>>>>>> 9e10d36f6ea (refactor OreSet)
     (X : Type*) [MulAction R X] :=
   Quotient (OreLocalization.oreEqv S X)
 
@@ -153,11 +148,13 @@ protected theorem expand' (r : X) (s s' : S) : r /ₒ s = s' • r /ₒ (s' * s)
 
 /-- Fractions which differ by a factor of the numerator can be proven equal if
 those factors expand to equal elements of `R`. -/
-@[to_additive /-- Differences whose minuends differ by a common summand can be proven equal if
+@[to_additive
+/-- Differences whose minuends differ by a common summand can be proven equal if
 those summands expand to equal elements of `R`. -/]
 protected theorem eq_of_num_factor_eq {r r' r₁ r₂ : R} {s t : S} (h : t * r = t * r') :
     r₁ * r * r₂ /ₒ s = r₁ * r' * r₂ /ₒ s := by
   rcases oreCondition r₁ t with ⟨r₁', t', hr₁⟩
+  rw [smul_eq_mul, op_smul_eq_mul] at hr₁
   rw [OreLocalization.expand' _ s t', OreLocalization.expand' _ s t']
   congr 1
   -- Porting note (https://github.com/leanprover-community/mathlib4/issues/11215): TODO: use `assoc_rw`?
@@ -223,11 +220,15 @@ theorem lift₂Expand_of {C : Sort*} {P : X → S → X → S → C}
 set_option backward.privateInPublic true in
 set_option backward.privateInPublic.warn false in
 @[to_additive]
-private abbrev smul' (r₁ : R) (s₁ : S) (r₂ : X) (s₂ : S) : X[S⁻¹] :=
-  oreNum r₁ s₂ • r₂ /ₒ (oreDenom r₁ s₂ * s₁)
+private abbrev smul' {A} [MulAction R A] [MulAction Rᵐᵒᵖ A] [OreSet S A] [SMul A X]
+    (r₁ : A) (s₁ : S) (r₂ : X) (s₂ : S) : X[S⁻¹] :=
+  (oreNum r₁ s₂ • r₂ : X) /ₒ (oreDenom r₁ s₂ * s₁)
 
+open scoped RightActions in
 @[to_additive]
-private theorem smul'_char (r₁ : R) (r₂ : X) (s₁ s₂ : S) (u : S) (v : R) (huv : u * r₁ = v * s₂) :
+private theorem smul'_char
+    {A} [MulAction R A] [MulAction Rᵐᵒᵖ A] [SMulCommClass R Rᵐᵒᵖ A] [OreSet S A] [SMul A X]
+    (r₁ : A) (r₂ : X) (s₁ s₂ : S) (u : S) (v : A) (huv : u.val • r₁ = v <• s₂.1) :
     OreLocalization.smul' r₁ s₁ r₂ s₂ = v • r₂ /ₒ (u * s₁) := by
   -- Porting note: `assoc_rw` was not ported yet
   simp only [smul']
@@ -235,16 +236,16 @@ private theorem smul'_char (r₁ : R) (r₂ : X) (s₁ s₂ : S) (u : S) (v : R)
   rcases oreCondition (u₀ : R) u with ⟨r₃, s₃, h₃⟩
   have :=
     calc
-      r₃ * v * s₂ = r₃ * (u * r₁) := by rw [mul_assoc, ← huv]
-      _ = s₃ * (u₀ * r₁) := by rw [← mul_assoc, ← mul_assoc, h₃]
-      _ = s₃ * v₀ * s₂ := by rw [mul_assoc, h₀]
+      (r₃ • v) <• s₂.val = r₃ • (u.val • r₁) := by rw [← smul_comm, ← huv]
+      _ = s₃.val • (u₀.val • r₁) := by rw [← smul_assoc s₃.val, h₃, ← smul_assoc]; sorry
+      _ = (s₃.val • v₀) <• s₂.val := by rw [← smul_comm (N := Rᵐᵒᵖ), h₀]
   rcases ore_right_cancel _ _ _ this with ⟨s₄, hs₄⟩
   symm; rw [oreDiv_eq_iff]
   use s₄ * s₃
   use s₄ * r₃
   simp only [Submonoid.coe_mul, Submonoid.smul_def]
   constructor
-  · rw [smul_smul, mul_assoc (c := v₀), ← hs₄]
+  · rw [mul_smul, ← smul_assoc (s₄ : R) _ v₀, ← hs₄]
     simp only [smul_smul, mul_assoc]
   · rw [← mul_assoc (b := (u₀ : R)), mul_assoc (c := (u₀ : R)), h₃]
     simp only [mul_assoc]
@@ -276,13 +277,8 @@ set_option backward.privateInPublic true in
 set_option backward.privateInPublic.warn false in
 /-- The scalar multiplication on the Ore localization of monoids. -/
 @[to_additive
-<<<<<<< HEAD
   /-- the vector addition on the Ore localization of additive monoids. -/]
-protected abbrev smul (y : R[S⁻¹]) (x : X[S⁻¹]) : X[S⁻¹] :=
-=======
-  "the vector addition on the Ore localization of additive monoids."]
 protected abbrev smul {A} [MulAction R A] (y : A[S⁻¹]) (x : X[S⁻¹]) : X[S⁻¹] :=
->>>>>>> 9e10d36f6ea (refactor OreSet)
   liftExpand (smul'' · · x) (fun r₁ r₂ s hs => by
     cases x with | _ x s₂
     change OreLocalization.smul' r₁ s x s₂ = OreLocalization.smul' (r₂ * r₁) ⟨_, hs⟩ x s₂
