@@ -197,25 +197,72 @@ theorem separatingLeft_iff_separatingRight [Finite n] : M.SeparatingLeft ↔ M.S
 alias ⟨SeparatingLeft.separatingRight, SeparatingRight.separatingLeft⟩ :=
   separatingLeft_iff_separatingRight
 
-theorem Nondegenerate.mul_iff_right (h : N.Nondegenerate) :
-    (M * N).Nondegenerate ↔ M.Nondegenerate := by
+private lemma card_le_of_separatingRight {m : Type*} [Fintype m] {N : Matrix m n A}
+    (hN : N.SeparatingRight) : Fintype.card n ≤ Fintype.card m := by
   classical
-  simp only [nondegenerate_iff_det_ne_zero, det_mul] at h ⊢
-  exact mul_ne_zero_iff_right h
-
-theorem Nondegenerate.mul_iff_left (h : M.Nondegenerate) :
-    (M * N).Nondegenerate ↔ N.Nondegenerate := by
-  classical
-  simp only [nondegenerate_iff_det_ne_zero, det_mul] at h ⊢
-  exact mul_ne_zero_iff_left h
+  by_contra! hlt
+  obtain ⟨f⟩ := Function.Embedding.nonempty_of_card_le hlt.le
+  have hnot_surj : ¬ Function.Surjective f := fun hsurj ↦
+    hlt.not_ge (Fintype.card_le_of_surjective f hsurj)
+  obtain ⟨i₀, hi₀⟩ : ∃ i₀, i₀ ∉ Set.range f := by
+    simpa [Function.Surjective, Set.mem_range] using hnot_surj
+  let P : Matrix n n A := of (Function.extend f N 0)
+  have hdet : P.det = 0 := by
+    apply det_eq_zero_of_row_eq_zero i₀
+    intro j
+    have : Function.extend f N 0 i₀ = 0 := Function.extend_apply' _ _ _ hi₀
+    simp [P, this]
+  obtain ⟨v, hv0, hPv⟩ := exists_mulVec_eq_zero_iff.mpr hdet
+  apply hv0 (hN.eq_zero_of_mulVec_eq_zero ?_)
+  ext i
+  have hrow : Function.extend f N 0 (f i) = N i := f.injective.extend_apply N 0 i
+  have := congr($hPv (f i))
+  simpa [P, mulVec, hrow] using this
 
 omit [Fintype n] in
-theorem Nondegenerate.smul_iff [Finite n] {t : A} (h : t ≠ 0) :
-    (t • M).Nondegenerate ↔ M.Nondegenerate := by
-  have := Fintype.ofFinite
+lemma Nondegenerate.nonempty_equiv {m : Type*} [Finite m] [Finite n] {N : Matrix m n A}
+    (hN : N.Nondegenerate) : Nonempty (m ≃ n) := by
+  have := Fintype.ofFinite m
+  have := Fintype.ofFinite n
+  have h1 := card_le_of_separatingRight hN.separatingRight
+  have h2 := card_le_of_separatingRight hN.separatingLeft.separatingRight_transpose
+  exact ⟨Fintype.equivOfCardEq (le_antisymm h2 h1)⟩
+
+omit [Fintype n] in
+theorem Nondegenerate.mul_iff_right {l m : Type*} [Finite l] [Fintype m] [Finite n]
+    {M : Matrix l m A} {N : Matrix m n A} (h : N.Nondegenerate) :
+    (M * N).Nondegenerate ↔ M.Nondegenerate := by
+  by_cases hlm : Nonempty (l ≃ m)
+  · obtain ⟨e₁⟩ := hlm
+    obtain ⟨e₂⟩ := h.nonempty_equiv
+    have := Fintype.ofFinite l
+    have := Fintype.ofFinite n
+    classical
+    rw [← nondegenerate_submatrix_iff e₁.symm.bijective e₂.bijective (M := M * N),
+      ← nondegenerate_submatrix_iff e₁.symm.bijective Function.bijective_id (M := M),
+      submatrix_mul M N _ _ _ Function.bijective_id]
+    have hN' := h.submatrix Function.bijective_id e₂.bijective
+    simp only [nondegenerate_iff_det_ne_zero, det_mul] at hN' ⊢
+    exact mul_ne_zero_iff_right hN'
+  · refine iff_of_false (fun hMN ↦ hlm ?_) (fun hM ↦ hlm (hM.nonempty_equiv))
+    obtain ⟨e₁⟩ := hMN.nonempty_equiv
+    obtain ⟨e₂⟩ := h.nonempty_equiv
+    exact ⟨e₁.trans e₂.symm⟩
+
+omit [Fintype n] in
+theorem Nondegenerate.mul_iff_left {l m : Type*} [Finite l] [Fintype m] [Finite n]
+    {M : Matrix l m A} {N : Matrix m n A} (h : M.Nondegenerate) :
+    (M * N).Nondegenerate ↔ N.Nondegenerate := by
+  rw [← nondegenerate_transpose_iff (M := M * N), transpose_mul,
+    Nondegenerate.mul_iff_right h.transpose, nondegenerate_transpose_iff]
+
+omit [Fintype n] in
+theorem Nondegenerate.smul_iff {m : Type*} [Finite m] [Finite n] {M : Matrix m n A} {t : A}
+    (h : t ≠ 0) : (t • M).Nondegenerate ↔ M.Nondegenerate := by
+  have := Fintype.ofFinite m
+  have := Fintype.ofFinite n
   rw [nondegenerate_def, nondegenerate_def]
   simp [smul_mulVec, mul_eq_zero_iff_left h]
-
 
 end Nondegenerate
 
